@@ -1,14 +1,15 @@
 mod database;
 mod tests;
-pub use database::database::{user_database, submission_database};
+mod server;
+pub use database::database::get_database;
+pub use server::server::start_listening;
 
 use rusqlite::Result;
 
 fn main() -> Result<()> {
-	let user_db = user_database()?;
-	let submission_db = submission_database()?;
+	let _db = get_database()?;
 
-
-
+	start_listening();
+	
 	Ok(())
 }
