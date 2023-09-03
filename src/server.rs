@@ -34,8 +34,8 @@ pub mod server {
 	}
 
 	pub fn start_listening() {
-		let server = Arc::new(Server::http("0.0.0.0:7878").unwrap());
-		println!("Listening on port 7878");
+		let server = Arc::new(Server::http("0.0.0.0:443").unwrap());
+		println!("Listening on port 443");
 
 		let mut handles = Vec::new();
 
