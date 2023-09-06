@@ -1,8 +1,9 @@
 pub mod server {
-	use std::{sync::Arc, thread};
 	use tiny_http::{Server, Response, Request};
+	use crate::database::database::*;
+	use std::sync::mpsc;
 
-	fn handle_request(req: Request) {
+	fn handle_request(req: Request, _db: &Database) {
 		match req.url() {
 			"/" => {
 				let response = Response::from_string("This is a backend.");
@@ -26,6 +27,13 @@ pub mod server {
 
 				req.respond(response).unwrap();
 			},
+
+
+			"/wou/register" => {
+
+			},
+
+
 			_ => {
 				let response = Response::empty(404);
 				req.respond(response).unwrap();
@@ -33,24 +41,65 @@ pub mod server {
 		}
 	}
 
-	pub fn start_listening() {
-		let server = Arc::new(Server::http("0.0.0.0:80").unwrap());
-		println!("Listening on port 80");
+	pub fn start_listening(rx: mpsc::Receiver<String>, db: Database) {
+		let server = Server::http("0.0.0.0:80").unwrap();
 
-		let mut handles = Vec::new();
+		loop {
+			match server.try_recv() {
+				Ok(req) => match req {
+					Some(req) => {
+						handle_request(req, &db);
+					},
+					None => ()
+				},
+				Err(_) => ()
+			}
 
-		for _ in 0..4 {
-			let server = server.clone();
-			
-			handles.push(thread::spawn(move || {
-				for request in server.incoming_requests() {
-					handle_request(request);
-				}
-			}));
-		}
+			match rx.try_recv() {
+				Ok(req) => {
+					let args = req.split_ascii_whitespace().collect::<Vec<&str>>();
 
-		for h in handles {
-			h.join().unwrap();
+					match args[0] {
+						"createuser" => {
+							db.add_user(args[1].to_string(), AccountType::Administrator, args[2].to_string()).unwrap();
+						},
+						"deleteuser" => {
+							db.delete_user(args[1].parse().unwrap()).unwrap();
+						},
+						"listusers" => {
+							for user in db.get_users().unwrap() {
+								println!("{:?}", user);
+							}
+						},
+						"userfromid" => {
+							let user = db.get_user_from_id(args[1].parse().unwrap()).unwrap();
+
+							match user {
+								Some(usr) => println!("{:?}", usr),
+								None => println!("No user found.")
+							}
+						},
+						"userfromname" => {
+							let user = db.get_user_from_name(args[1].to_string()).unwrap();
+
+							match user {
+								Some(usr) => println!("{:?}", usr),
+								None => println!("No user found.")
+							}
+						},
+						"testuserpass" => {
+							let user = db.get_user_from_id(args[1].parse().unwrap()).unwrap();
+
+							match user {
+								Some(usr) => println!("{:?}", usr.verify_pass(args[2].to_string()).unwrap()),
+								None => println!("No user found.")
+							}
+						}
+						_ => ()
+					}
+				},
+				Err(_) => ()
+			}
 		}
 	}
 }

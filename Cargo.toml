@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 rusqlite = { version = "0.29.0", features = ["bundled"] }
 tiny_http = "0.12.0"
+rand = "0.8.5"
+data-encoding = "2.4.0"
+ring = "0.16.20"
