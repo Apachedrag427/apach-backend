@@ -10,9 +10,4 @@ mod tests {
 
 		Ok(())
 	}
-
-	#[test]
-	fn will_fail() {
-		panic!("Whoops!  I failed!");
-	}
 }
