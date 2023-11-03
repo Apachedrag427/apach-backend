@@ -1,32 +1,16 @@
-mod database;
-mod tests;
-mod server;
 mod cli;
-pub use database::database::*;
-pub use server::server::start_listening;
+mod database;
+mod server;
 pub use cli::interface::handle_server_input;
+pub use database::database::*;
+pub use server::server::*;
 
-use std::thread;
-use std::sync::mpsc;
 use rusqlite::Result;
+use std::sync::{Arc, RwLock};
 
-fn main() -> Result<()> {
-	let db = Database::build()?;
+#[tokio::main]
+async fn main() -> Result<()> {
+	let db = Arc::new(RwLock::new(Database::build()?));
 
-	let (tx, rx) = mpsc::channel::<String>();
-	let mut branches = Vec::new();
-
-	branches.push(thread::spawn(move || {
-		start_listening(rx, db);
-	}));
-
-	branches.push(thread::spawn(|| {
-		handle_server_input(tx).unwrap();
-	}));
-
-	for b in branches {
-		b.join().unwrap();
-	}
-	
 	Ok(())
 }
